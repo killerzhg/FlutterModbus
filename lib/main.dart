@@ -4,61 +4,19 @@ import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:modbus_client/modbus_client.dart';
-import 'package:modbus_client_tcp/modbus_client_tcp.dart';
 
-// Create the modbus client.
-ModbusClientTcp modbusClient = ModbusClientTcp("192.168.1.6", unitId: 1);
-//modbusClient.disconnect();
+import 'socket/modbusTCP.dart';
 
-// 假设 bytesRegister.value 是一个 List<int> 或 Uint8List
-int combineBytesToUInt16(List<int> bytes, {bool bigEndian = true}) {
-  if (bytes.length != 2) {
-    throw ArgumentError("The length of bytes must be 2!");
-  }
-  int highByte = bytes[0]; // 高位字节
-  int lowByte = bytes[1];   // 低位字节
-  if (bigEndian) {
-    // 大端序：高位字节在前，低位字节在后
-    return (highByte << 8) | lowByte;
-  } else {
-    // 小端序：低位字节在前，高位字节在后
-    return (lowByte << 8) | highByte;
-  }
-}
+// 创建 ModbusClientWithReconnect 对象
+final ModbusClientWithReconnect modbusClient = ModbusClientWithReconnect(
+  host: "192.168.1.6", // 替换为你的 Modbus 服务器地址
+  unitId: 1, // 替换为你的 Modbus 单元 ID
+  maxReconnectAttempts: 10, // 设置最大重连次数为 10
+  reconnectInterval: const Duration(seconds: 3), // 设置重连间隔为 3 秒
+);
 
 void main() {
   runApp(const MyApp());
-}
-// byteCount必须偶数
-void getReadRequestString(int address , int byteCount) async {
-  var bytesRegister = ModbusBytesRegister(
-      name: "BytesArray",
-      address: address,
-      byteCount: byteCount,
-      onUpdate: (self) => {
-        print(self)
-      });
-  var req2 = bytesRegister.getReadRequest();
-  var res = await modbusClient.send(req2);
-  if (byteCount ==2)
-  {
-    print(combineBytesToUInt16(bytesRegister.value as List<int>, bigEndian: true));
-  } else {
-    print(utf8.decode(bytesRegister.value as List<int>));
-  }
-}
-
-void getWriteRequestString(int address , Uint8List bytes) async {
-  var bytesRegister = ModbusBytesRegister(
-      name: "BytesArray",
-      address: address,
-      byteCount: bytes.length,
-      onUpdate: (self) => {
-        print(self)
-      });
-  var req1 = bytesRegister.getWriteRequest(bytes);
-  var res = await modbusClient.send(req1);
-  print(res.code);
 }
 
 class MyApp extends StatelessWidget {
@@ -90,17 +48,26 @@ class _MyHomePageState extends State<MyHomePage> {
   int _counter = 0;
   String result = "";
 
+
+
   @override
   void initState() {
     super.initState();
+    // 连接 Modbus 服务器
+    _connect();
+  }
+
+  Future<void> _connect() async {
+    await modbusClient.connect();
+    // 启动重连监听器
+    modbusClient.startReconnectionListener();
   }
 
   void _incrementCounter() {
     setState(() {
       _counter++;
     });
-    //Share.share("widget.code");
-    getReadRequestString(1100, 4);
+    modbusClient.getReadRequestString(1100, 4);
   }
 
   @override
