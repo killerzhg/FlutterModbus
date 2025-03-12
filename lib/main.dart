@@ -125,7 +125,9 @@ class _MyHomePageState extends State<MyHomePage> {
           children: <Widget>[
             SizedBox(
               width: 150,
-              child: TextField(keyboardType: TextInputType.number,inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+              child: TextField(
+                keyboardType: TextInputType.number,
+                inputFormatters: [FilteringTextInputFormatter.digitsOnly],
                 decoration: InputDecoration(hintText: "请输入寄存器地址"),
                 onChanged: (value) {
                   _registerAddress = value; // Update the variable with the input value
