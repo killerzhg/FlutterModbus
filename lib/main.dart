@@ -1,22 +1,22 @@
-import 'dart:convert';
-import 'dart:typed_data';
-
 import 'package:flutter/material.dart';
-import 'package:share_plus/share_plus.dart';
-import 'package:modbus_client/modbus_client.dart';
-
 import 'socket/modbusTCP.dart';
-
-// 创建 ModbusClientWithReconnect 对象
-final ModbusClientWithReconnect modbusClient = ModbusClientWithReconnect(
-  host: "192.168.1.6", // 替换为你的 Modbus 服务器地址
-  unitId: 1, // 替换为你的 Modbus 单元 ID
-  maxReconnectAttempts: 10, // 设置最大重连次数为 10
-  reconnectInterval: const Duration(seconds: 3), // 设置重连间隔为 3 秒
-);
 
 void main() {
   runApp(const MyApp());
+  WidgetsBinding.instance.addObserver(MyAppLifecycleObserver());
+}
+
+class MyAppLifecycleObserver with WidgetsBindingObserver {
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.paused) {
+      print('App进入后台');
+      // 在这里执行进入后台的逻辑，如暂停动画、保存数据等
+    } else if (state == AppLifecycleState.resumed) {
+      print('App回到前台');
+      // 在这里执行回到前台的逻辑，如恢复动画、重新加载数据等
+    }
+  }
 }
 
 class MyApp extends StatelessWidget {
@@ -48,13 +48,18 @@ class _MyHomePageState extends State<MyHomePage> {
   int _counter = 0;
   String result = "";
 
-
+  // 创建 ModbusClientWithReconnect 对象
+  final ModbusClientWithReconnect modbusClient = ModbusClientWithReconnect(
+    host: "192.168.1.6", // 替换为你的 Modbus 服务器地址
+    unitId: 1, // 替换为你的 Modbus 单元 ID
+    maxReconnectAttempts: 10, // 设置最大重连次数为 10
+    reconnectInterval: const Duration(seconds: 3), // 设置重连间隔为 3 秒
+  );
 
   @override
   void initState() {
     super.initState();
-    // 连接 Modbus 服务器
-    _connect();
+    _connect();// 连接 Modbus 服务器
   }
 
   Future<void> _connect() async {
@@ -63,11 +68,21 @@ class _MyHomePageState extends State<MyHomePage> {
     modbusClient.startReconnectionListener();
   }
 
-  void _incrementCounter() {
+@override
+  void deactivate() {
+    print("deactivate");
+    // TODO: implement deactivate
+    super.deactivate();
+  }
+
+  Future<void>  _incrementCounter() async {
+    //modbusClient.getReadRequestString(2970, 12);
+    result = await modbusClient.getReadRequestString(2050, 2);
+    print("Received string: $result");
     setState(() {
-      _counter++;
-    });
-    modbusClient.getReadRequestString(1100, 4);
+      result;
+      });
+
   }
 
   @override
@@ -75,7 +90,8 @@ class _MyHomePageState extends State<MyHomePage> {
     return Scaffold(
       appBar: AppBar(
         backgroundColor: Theme.of(context).colorScheme.inversePrimary,
-        title: Text(widget.title),
+        title: Text(modbusClient.isConnected),
+        centerTitle: true,
       ),
       body: Center(
         child: Column(
@@ -85,7 +101,7 @@ class _MyHomePageState extends State<MyHomePage> {
               'You have pushed the button this many times:',
             ),
             Text(
-              '$_counter',
+              '$result',
               style: Theme.of(context).textTheme.headlineMedium,
             ),
           ],

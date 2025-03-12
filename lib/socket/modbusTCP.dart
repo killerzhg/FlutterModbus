@@ -5,7 +5,6 @@ import 'dart:typed_data';
 import 'package:modbus_client/modbus_client.dart';
 import 'package:modbus_client_tcp/modbus_client_tcp.dart';
 
-
 class ModbusClientWithReconnect {
   final String host;
   final int unitId;
@@ -25,21 +24,19 @@ class ModbusClientWithReconnect {
   }
 
   // byteCount必须偶数
-  void getReadRequestString(int address , int byteCount) async {
+  Future<String> getReadRequestString(int address, int byteCount) async {
     var bytesRegister = ModbusBytesRegister(
         name: "BytesArray",
         address: address,
         byteCount: byteCount,
-        onUpdate: (self) => {
-          print(self)
-        });
+        onUpdate: (self) => {print(self)});
     var req2 = bytesRegister.getReadRequest();
     var res = await send(req2);
-    if (byteCount ==2)
-    {
-      print(combineBytesToUInt16(bytesRegister.value as List<int>, bigEndian: true));
+    if (byteCount == 2) {
+      return combineBytesToUInt16(bytesRegister.value as List<int>,
+          bigEndian: true).toString();;
     } else {
-      print(utf8.decode(bytesRegister.value as List<int>));
+      return utf8.decode(bytesRegister.value as List<int>);
     }
   }
 
@@ -53,7 +50,7 @@ class ModbusClientWithReconnect {
         });
     var req1 = bytesRegister.getWriteRequest(bytes);
     var res = await send(req1);
-    print(res.code);
+    print(res.code?"写入成功":"写入失败");
   }
 
 // 假设 bytesRegister.value 是一个 List<int> 或 Uint8List
@@ -72,8 +69,6 @@ class ModbusClientWithReconnect {
     }
   }
 
-
-
   ModbusClientTcp get client {
     if (_modbusClient == null) {
       throw Exception("Modbus client is not initialized.");
@@ -85,7 +80,9 @@ class ModbusClientWithReconnect {
     await _connectWithRetry();
   }
 
-
+  String get isConnected {
+    return client.isConnected?"PLC已连接":"PLC未连接";
+  }
   Future<void> _connectWithRetry() async {
     print("开始尝试连接...");
     await Future.doWhile(() async {
