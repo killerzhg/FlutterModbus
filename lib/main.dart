@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'socket/modbusTCP.dart';
 
 void main() {
@@ -47,6 +48,7 @@ class MyHomePage extends StatefulWidget {
 class _MyHomePageState extends State<MyHomePage> {
   int _counter = 0;
   String result = "";
+  String _registerAddress = ""; // Variable to store the input value
 
   // 创建 ModbusClientWithReconnect 对象
   final ModbusClientWithReconnect modbusClient = ModbusClientWithReconnect(
@@ -77,12 +79,36 @@ class _MyHomePageState extends State<MyHomePage> {
 
   Future<void>  _incrementCounter() async {
     //modbusClient.getReadRequestString(2970, 12);
-    result = await modbusClient.getReadRequestString(2050, 2);
-    print("Received string: $result");
+    if (!modbusClient.client.isConnected) {
+      _showNoConnectionDialog(context);
+      return;
+    }
+    var value = await modbusClient.getReadRequestString(int.parse(_registerAddress), 2);
+    result = "Received value: $value";
     setState(() {
+      _counter++;
       result;
-      });
+    });
+  }
 
+  void _showNoConnectionDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('没有连接'),
+          content: const Text('设备未连接。'),
+          actions: <Widget>[
+            TextButton(
+              child: const Text('确定'),
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+            ),
+          ],
+        );
+      },
+    );
   }
 
   @override
@@ -97,11 +123,16 @@ class _MyHomePageState extends State<MyHomePage> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: <Widget>[
-            const Text(
-              'You have pushed the button this many times:',
-            ),
+            SizedBox(
+              width: 150,
+              child: TextField(keyboardType: TextInputType.number,inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                decoration: InputDecoration(hintText: "请输入寄存器地址"),
+                onChanged: (value) {
+                  _registerAddress = value; // Update the variable with the input value
+                },
+              )),
             Text(
-              '$result',
+              result,
               style: Theme.of(context).textTheme.headlineMedium,
             ),
           ],

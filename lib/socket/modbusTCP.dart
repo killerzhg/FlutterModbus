@@ -31,10 +31,12 @@ class ModbusClientWithReconnect {
         byteCount: byteCount,
         onUpdate: (self) => {print(self)});
     var req2 = bytesRegister.getReadRequest();
-    var res = await send(req2);
+    await send(req2);
     if (byteCount == 2) {
-      return combineBytesToUInt16(bytesRegister.value as List<int>,
-          bigEndian: true).toString();;
+      if(bytesRegister.value == null){
+        return "null";
+      }
+      return combineBytesToUInt16(bytesRegister.value as List<int>).toString();
     } else {
       return utf8.decode(bytesRegister.value as List<int>);
     }
@@ -170,4 +172,5 @@ class ModbusClientWithReconnect {
       return null;
     }
   }
+
 }
