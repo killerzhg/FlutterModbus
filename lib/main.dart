@@ -1,3 +1,5 @@
+import 'dart:developer';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'socket/modbusTCP.dart';
@@ -51,6 +53,12 @@ class _MyHomePageState extends State<MyHomePage> with WidgetsBindingObserver {
     WidgetsBinding.instance.addObserver(this);
     _connect();// 连接 Modbus 服务器
   }
+  Future<void> _connect() async {
+    await modbusClient.connect();
+    // 启动重连监听器
+    modbusClient.startReconnectionListener();
+  }
+
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
@@ -61,75 +69,78 @@ class _MyHomePageState extends State<MyHomePage> with WidgetsBindingObserver {
     super.didChangeAppLifecycleState(state);
     switch (state) {
       case AppLifecycleState.resumed:
-        print('应用回到前台');
-        break;
-      case AppLifecycleState.paused:
-        print('应用进入后台');
+        log('应用回到前台');
         break;
       case AppLifecycleState.inactive:
-        print('应用处于非活动状态');
+      //通常是应用即将暂停（paused）或者恢复（resumed）的过渡状态.当应用处于非活跃状态时，它并没有完全失去焦点，但也不能接收用户的输入。
+        if(Theme.of(context).platform== TargetPlatform.iOS || Theme.of(context).platform== TargetPlatform.android) {
+          log("应用处于非活动状态");
+        }
+      break;
+      case AppLifecycleState.paused:
+      //当应用处于暂停状态时，它在后台运行，不再接收用户输入，并且通常会停止执行一些不必要的操作以节省资源。后台不能执行网络请求 只针对移动端
+        log('应用进入后台');
         break;
+
       case AppLifecycleState.detached:
-        print('应用与宿主隔离');
+        log('应用与宿主隔离');
         break;
       case AppLifecycleState.hidden:
-      //app隐藏到后台不能执行网络请求 桌面端点最小化调用这个
-        print('应用隐藏');
+        //桌面端最小化的时候调用这个 只针对桌面端
+        if(Theme.of(context).platform== TargetPlatform.windows || Theme.of(context).platform== TargetPlatform.linux || Theme.of(context).platform== TargetPlatform.macOS) {
+          log("应用最小化");
+        }
         break;
     }
   }
+
+  //region 系统改变回调
   //当前系统改变了一些访问性活动的回调
-  @override
-  void didChangeAccessibilityFeatures() {
-    super.didChangeAccessibilityFeatures();
-    print("didChangeAccessibilityFeatures 当前系统改变了一些访问性活动的回调");
-  }
-  //低内存回调
-  @override
-  void didHaveMemoryPressure() {
-    super.didHaveMemoryPressure();
-    print("didHaveMemoryPressure 低内存回调");
-  }
-  //用户本地设置变化时调用，如系统语言改变
-  @override
-  void didChangeLocales(List<Locale>? locale) {
-    super.didChangeLocales(locale);
-    print("didChangeLocales 用户本地设置变化时调用，如系统语言改变");
-  }
-  //应用尺寸改变时回调，例如旋转
-  @override
-  void didChangeMetrics() {
-    super.didChangeMetrics();
-    Size size = WidgetsBinding.instance.window.physicalSize;
-    print("didChangeMetrics  ：宽：${size.width} 高：${size.height}");
-  }
-  //系统切换主题时回调
-  @override
-  void didChangePlatformBrightness() {
-    super.didChangePlatformBrightness();
-    print("didChangePlatformBrightness 切换主题");
-  }
-  ///文字系数变化
-  @override
-  void didChangeTextScaleFactor() {
-    super.didChangeTextScaleFactor();
-    print(
-        "didChangeTextScaleFactor  文字系数变化：${WidgetsBinding.instance.window.textScaleFactor}");
-  }
-
-  Future<void> _connect() async {
-    await modbusClient.connect();
-    // 启动重连监听器
-    modbusClient.startReconnectionListener();
-  }
-
-
-@override
-  void deactivate() {
-    print("deactivate");
-    // TODO: implement deactivate
-    super.deactivate();
-  }
+  // @override
+  // void didChangeAccessibilityFeatures() {
+  //   super.didChangeAccessibilityFeatures();
+  //   print("didChangeAccessibilityFeatures 当前系统改变了一些访问性活动的回调");
+  // }
+  //
+  // //低内存回调
+  // @override
+  // void didHaveMemoryPressure() {
+  //   super.didHaveMemoryPressure();
+  //   print("didHaveMemoryPressure 低内存回调");
+  // }
+  // //用户本地设置变化时调用，如系统语言改变
+  // @override
+  // void didChangeLocales(List<Locale>? locale) {
+  //   super.didChangeLocales(locale);
+  //   print("didChangeLocales 用户本地设置变化时调用，如系统语言改变");
+  // }
+  // //应用尺寸改变时回调，例如旋转
+  // @override
+  // void didChangeMetrics() {
+  //   super.didChangeMetrics();
+  //   Size size = WidgetsBinding.instance.window.physicalSize;
+  //   print("didChangeMetrics  ：宽：${size.width} 高：${size.height}");
+  // }
+  // //系统切换主题时回调
+  // @override
+  // void didChangePlatformBrightness() {
+  //   super.didChangePlatformBrightness();
+  //   print("didChangePlatformBrightness 切换主题");
+  // }
+  // ///文字系数变化
+  // @override
+  // void didChangeTextScaleFactor() {
+  //   super.didChangeTextScaleFactor();
+  //   print(
+  //       "didChangeTextScaleFactor  文字系数变化：${WidgetsBinding.instance.window.textScaleFactor}");
+  // }
+  // @override
+  // void deactivate() {
+  //   print("deactivate");
+  //   // TODO: implement deactivate
+  //   super.deactivate();
+  // }
+//endregion
 
   Future<void>  _incrementCounter() async {
     //modbusClient.getReadRequestString(2970, 12);
