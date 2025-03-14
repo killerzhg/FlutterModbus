@@ -4,20 +4,6 @@ import 'socket/modbusTCP.dart';
 
 void main() {
   runApp(const MyApp());
-  WidgetsBinding.instance.addObserver(MyAppLifecycleObserver());
-}
-
-class MyAppLifecycleObserver with WidgetsBindingObserver {
-  @override
-  void didChangeAppLifecycleState(AppLifecycleState state) {
-    if (state == AppLifecycleState.paused) {
-      print('App进入后台');
-      // 在这里执行进入后台的逻辑，如暂停动画、保存数据等
-    } else if (state == AppLifecycleState.resumed) {
-      print('App回到前台');
-      // 在这里执行回到前台的逻辑，如恢复动画、重新加载数据等
-    }
-  }
 }
 
 class MyApp extends StatelessWidget {
@@ -45,7 +31,7 @@ class MyHomePage extends StatefulWidget {
   State<MyHomePage> createState() => _MyHomePageState();
 }
 
-class _MyHomePageState extends State<MyHomePage> {
+class _MyHomePageState extends State<MyHomePage> with WidgetsBindingObserver {
   int _counter = 0;
   String result = "";
   String _registerAddress = ""; // Variable to store the input value
@@ -58,10 +44,77 @@ class _MyHomePageState extends State<MyHomePage> {
     reconnectInterval: const Duration(seconds: 3), // 设置重连间隔为 3 秒
   );
 
+
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     _connect();// 连接 Modbus 服务器
+  }
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    super.didChangeAppLifecycleState(state);
+    switch (state) {
+      case AppLifecycleState.resumed:
+        print('应用回到前台');
+        break;
+      case AppLifecycleState.paused:
+        print('应用进入后台');
+        break;
+      case AppLifecycleState.inactive:
+        print('应用处于非活动状态');
+        break;
+      case AppLifecycleState.detached:
+        print('应用与宿主隔离');
+        break;
+      case AppLifecycleState.hidden:
+      //app隐藏到后台不能执行网络请求 桌面端点最小化调用这个
+        print('应用隐藏');
+        break;
+    }
+  }
+  //当前系统改变了一些访问性活动的回调
+  @override
+  void didChangeAccessibilityFeatures() {
+    super.didChangeAccessibilityFeatures();
+    print("didChangeAccessibilityFeatures 当前系统改变了一些访问性活动的回调");
+  }
+  //低内存回调
+  @override
+  void didHaveMemoryPressure() {
+    super.didHaveMemoryPressure();
+    print("didHaveMemoryPressure 低内存回调");
+  }
+  //用户本地设置变化时调用，如系统语言改变
+  @override
+  void didChangeLocales(List<Locale>? locale) {
+    super.didChangeLocales(locale);
+    print("didChangeLocales 用户本地设置变化时调用，如系统语言改变");
+  }
+  //应用尺寸改变时回调，例如旋转
+  @override
+  void didChangeMetrics() {
+    super.didChangeMetrics();
+    Size size = WidgetsBinding.instance.window.physicalSize;
+    print("didChangeMetrics  ：宽：${size.width} 高：${size.height}");
+  }
+  //系统切换主题时回调
+  @override
+  void didChangePlatformBrightness() {
+    super.didChangePlatformBrightness();
+    print("didChangePlatformBrightness 切换主题");
+  }
+  ///文字系数变化
+  @override
+  void didChangeTextScaleFactor() {
+    super.didChangeTextScaleFactor();
+    print(
+        "didChangeTextScaleFactor  文字系数变化：${WidgetsBinding.instance.window.textScaleFactor}");
   }
 
   Future<void> _connect() async {
@@ -69,6 +122,7 @@ class _MyHomePageState extends State<MyHomePage> {
     // 启动重连监听器
     modbusClient.startReconnectionListener();
   }
+
 
 @override
   void deactivate() {
