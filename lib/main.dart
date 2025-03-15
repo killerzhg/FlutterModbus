@@ -27,6 +27,7 @@ class MyApp extends StatelessWidget {
 
 class MyHomePage extends StatefulWidget {
   const MyHomePage({super.key, required this.title});
+
   final String title;
 
   @override
@@ -46,17 +47,16 @@ class _MyHomePageState extends State<MyHomePage> with WidgetsBindingObserver {
     reconnectInterval: const Duration(seconds: 3), // 设置重连间隔为 3 秒
   );
 
-
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
-    _connect();// 连接 Modbus 服务器
+    _connect(); // 连接 Modbus 服务器
   }
+
   Future<void> _connect() async {
     await modbusClient.connect();
-    // 启动重连监听器
-    modbusClient.startReconnectionListener();
+    modbusClient.startReconnectionListener(); // 启动重连监听器
   }
 
   @override
@@ -64,6 +64,7 @@ class _MyHomePageState extends State<MyHomePage> with WidgetsBindingObserver {
     WidgetsBinding.instance.removeObserver(this);
     super.dispose();
   }
+
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     super.didChangeAppLifecycleState(state);
@@ -72,13 +73,14 @@ class _MyHomePageState extends State<MyHomePage> with WidgetsBindingObserver {
         log('应用回到前台');
         break;
       case AppLifecycleState.inactive:
-      //通常是应用即将暂停（paused）或者恢复（resumed）的过渡状态.当应用处于非活跃状态时，它并没有完全失去焦点，但也不能接收用户的输入。
-        if(Theme.of(context).platform== TargetPlatform.iOS || Theme.of(context).platform== TargetPlatform.android) {
+        //通常是应用即将暂停（paused）或者恢复（resumed）的过渡状态.当应用处于非活跃状态时，它并没有完全失去焦点，但也不能接收用户的输入。
+        if (Theme.of(context).platform == TargetPlatform.iOS ||
+            Theme.of(context).platform == TargetPlatform.android) {
           log("应用处于非活动状态");
         }
-      break;
+        break;
       case AppLifecycleState.paused:
-      //当应用处于暂停状态时，它在后台运行，不再接收用户输入，并且通常会停止执行一些不必要的操作以节省资源。后台不能执行网络请求 只针对移动端
+        //当应用处于暂停状态时，它在后台运行，不再接收用户输入，并且通常会停止执行一些不必要的操作以节省资源。后台不能执行网络请求 只针对移动端
         log('应用进入后台');
         break;
 
@@ -87,7 +89,9 @@ class _MyHomePageState extends State<MyHomePage> with WidgetsBindingObserver {
         break;
       case AppLifecycleState.hidden:
         //桌面端最小化的时候调用这个 只针对桌面端
-        if(Theme.of(context).platform== TargetPlatform.windows || Theme.of(context).platform== TargetPlatform.linux || Theme.of(context).platform== TargetPlatform.macOS) {
+        if (Theme.of(context).platform == TargetPlatform.windows ||
+            Theme.of(context).platform == TargetPlatform.linux ||
+            Theme.of(context).platform == TargetPlatform.macOS) {
           log("应用最小化");
         }
         break;
@@ -142,13 +146,14 @@ class _MyHomePageState extends State<MyHomePage> with WidgetsBindingObserver {
   // }
 //endregion
 
-  Future<void>  _incrementCounter() async {
+  Future<void> _incrementCounter() async {
     //modbusClient.getReadRequestString(2970, 12);
     if (!modbusClient.client.isConnected) {
       _showNoConnectionDialog(context);
       return;
     }
-    var value = await modbusClient.getReadRequestString(int.parse(_registerAddress), 2);
+    var value =
+        await modbusClient.getReadRequestString(int.parse(_registerAddress), 2);
     result = "Received value: $value";
     setState(() {
       _counter++;
@@ -181,7 +186,7 @@ class _MyHomePageState extends State<MyHomePage> with WidgetsBindingObserver {
     return Scaffold(
       appBar: AppBar(
         backgroundColor: Theme.of(context).colorScheme.inversePrimary,
-        title: Text(modbusClient.isConnected),
+        title: Text(modbusClient.getConnectStatus),
         centerTitle: true,
       ),
       body: Center(
@@ -189,15 +194,16 @@ class _MyHomePageState extends State<MyHomePage> with WidgetsBindingObserver {
           mainAxisAlignment: MainAxisAlignment.center,
           children: <Widget>[
             SizedBox(
-              width: 150,
-              child: TextField(
-                keyboardType: TextInputType.number,
-                inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-                decoration: InputDecoration(hintText: "请输入寄存器地址"),
-                onChanged: (value) {
-                  _registerAddress = value; // Update the variable with the input value
-                },
-              )),
+                width: 150,
+                child: TextField(
+                  keyboardType: TextInputType.number,
+                  inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                  decoration: InputDecoration(hintText: "请输入寄存器地址"),
+                  onChanged: (value) {
+                    _registerAddress =
+                        value; // Update the variable with the input value
+                  },
+                )),
             Text(
               result,
               style: Theme.of(context).textTheme.headlineMedium,

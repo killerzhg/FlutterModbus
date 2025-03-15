@@ -82,7 +82,7 @@ class ModbusClientWithReconnect {
     await _connectWithRetry();
   }
 
-  String get isConnected {
+  String get getConnectStatus {
     return client.isConnected?"PLC已连接":"PLC未连接";
   }
   Future<void> _connectWithRetry() async {

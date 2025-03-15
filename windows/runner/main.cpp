@@ -30,8 +30,9 @@ int APIENTRY wWinMain(_In_ HINSTANCE instance, _In_opt_ HINSTANCE prev,
     int screenWidth = GetSystemMetrics(SM_CXSCREEN);
     int screenHeight = GetSystemMetrics(SM_CYSCREEN);
 
-    int windowWidth = 1000;
-    int windowHeight = 720;
+    //static_cast强制类型转换 std::round四舍五入
+    int windowWidth = static_cast<int>(std::round(screenWidth/2));
+    int windowHeight =static_cast<int>(std::round(screenHeight/2)) ;
 
     int windowX = (screenWidth - windowWidth) / 2;
     int windowY = (screenHeight - windowHeight) / 2;
